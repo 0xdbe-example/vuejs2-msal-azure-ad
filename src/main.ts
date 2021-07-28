@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import App from './App.vue'
 import { MsalPlugin, MsalPluginOptions } from './plugins/msal.plugin';
+import router from './router'
 
 Vue.config.productionTip = false
 
@@ -12,5 +13,6 @@ const options: MsalPluginOptions = {
 Vue.use(new MsalPlugin(), options);
 
 new Vue({
-  render: h => h(App),
+  router,
+  render: h => h(App)
 }).$mount('#app')

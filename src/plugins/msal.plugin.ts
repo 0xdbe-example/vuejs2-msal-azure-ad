@@ -24,6 +24,8 @@ export class MsalPlugin implements PluginObject<MsalPluginOptions> {
     };
 
     public isAuthenticated = false;
+    public username = '';
+    public account: msal.AccountInfo | null = null
 
 
     public install(vue: VueConstructor<Vue>, options?: MsalPluginOptions): void {
@@ -41,9 +43,9 @@ export class MsalPlugin implements PluginObject<MsalPluginOptions> {
             auth: {
                 clientId: options.clientId,
                 authority: `https://login.microsoftonline.com/${options.tenantId}`,
-                redirectUri: '/',
+                redirectUri: '/redirect',
                 postLogoutRedirectUri: '/',
-                navigateToLoginRequestUrl: true
+                navigateToLoginRequestUrl: false
             },
             cache: {
                 cacheLocation: 'sessionStorage',
@@ -83,7 +85,7 @@ export class MsalPlugin implements PluginObject<MsalPluginOptions> {
     public async signIn() {
         try {
             const loginRequest: msal.RedirectRequest = {
-                redirectUri: '/',
+                redirectUri: '/redirect',
                 scopes: ["api://helloworld.com/user_impersonation"],
             };
             msalInstance.loginRedirect(loginRequest);
@@ -109,9 +111,28 @@ export class MsalPlugin implements PluginObject<MsalPluginOptions> {
         }
     }
 
-    public handleRedirect(){
-        // to do
-        // https://azuread.github.io/microsoft-authentication-library-for-js/ref/classes/_azure_msal_browser.publicclientapplication.html#handleredirectpromise
+    public handleRedirect (response: any) {
+        console.log("handle here");
+        msalInstance.handleRedirectPromise().then((response) => {
+            if (response !== null) {
+                this.account = response.account;
+                msalInstance.setActiveAccount(response.account)
+            } else {
+                const currentAccounts = msalInstance.getAllAccounts();
+                if (currentAccounts.length === 1) {
+                    this.account = currentAccounts[0];
+                    msalInstance.setActiveAccount(this.account)
+                }
+            }
+            console.log("token: ");
+            console.log(response);
+            // Check if the tokenResponse is null
+            // If the tokenResponse !== null, then you are coming back from a successful authentication redirect.
+            // If the tokenResponse === null, you are not coming back from an auth redirect.
+        }).catch((error) => {
+            console.log(error);
+            // handle error, either in the library or coming back from the server
+        });
     }
 
     public async signOut() {
